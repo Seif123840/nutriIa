@@ -132,10 +132,16 @@ import { UserProfile, FoodLog, WeightLog, DailyNutrition } from '../../models/nu
               <div class="logs-list">
                 @for (log of recentLogs(); track log.id) {
                   <div class="log-row">
-                    <div class="log-badge" [class]="log.meal_type">{{ mealEmoji(log.meal_type) }}</div>
+                    <div class="log-badge" [class]="log.mealType">
+                      {{ mealEmoji(log.mealType) }}
+                    </div>
                     <div class="log-info">
-                      <span class="log-name">{{ log.food_item?.name }}</span>
-                      <span class="log-meta">{{ log.quantity_g }}g · {{ log.meal_type }}</span>
+                     <span class="log-name">
+  {{ log.food?.name || log.food?.description }}
+</span>
+                      <span class="log-meta">
+  {{ log.quantityG }}g · {{ log.mealType }}
+</span>
                     </div>
                     <span class="log-cal">{{ log.calories | number:'1.0-0' }} kcal</span>
                   </div>
@@ -175,7 +181,7 @@ import { UserProfile, FoodLog, WeightLog, DailyNutrition } from '../../models/nu
             @if (weightLogs().length > 0) {
               <div class="weight-stats">
                 <div class="wstat">
-                  <span class="wval">{{ weightLogs()[weightLogs().length - 1].weight_kg }} kg</span>
+                  <span class="wval">{{ weightLogs()[weightLogs().length - 1].weight}} kg</span>
                   <span class="wkey">Current</span>
                 </div>
                 @if (weightLogs().length > 1) {
@@ -607,18 +613,18 @@ export class DashboardHomeComponent implements OnInit {
   get weightDelta(): number {
     const ws = this.weightLogs();
     if (ws.length < 2) return 0;
-    return ws[ws.length - 1].weight_kg - ws[ws.length - 2].weight_kg;
+    return ws[ws.length - 1].weight - ws[ws.length - 2].weight;
   }
 
   get chartPoints(): string {
     const ws = this.weightLogs();
     if (ws.length < 2) return '';
-    const min = Math.min(...ws.map(w => w.weight_kg));
-    const max = Math.max(...ws.map(w => w.weight_kg));
+    const min = Math.min(...ws.map(w => w.weight));
+    const max = Math.max(...ws.map(w => w.weight));
     const range = max - min || 1;
     return ws.map((w, i) => {
       const x = (i / (ws.length - 1)) * 300;
-      const y = 55 - ((w.weight_kg - min) / range) * 50;
+      const y = 55 - ((w.weight - min) / range) * 50;
       return `${x},${y}`;
     }).join(' ');
   }

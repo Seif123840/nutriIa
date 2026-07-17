@@ -85,63 +85,62 @@ export class AuthService {
 
 
 
-  // LOGIN
-  login(credentials: { email: string; password: string }): Observable<any> {
+    // LOGIN
+    login(credentials: { email: string; password: string }): Observable<any> {
 
-    return this.http.post<any>(
-        `${this.apiUrl}/login`,
-        credentials
-    )
-        .pipe(
+        return this.http.post<any>(
+            `${this.apiUrl}/login`,
+            credentials
+        )
+            .pipe(
 
-            tap(response => {
+                tap(response => {
 
-
-              const user: User = {
-
-                id: response.id,
-
-                email: response.email,
-
-                role: response.role
-
-              };
+                    console.log("LOGIN RESPONSE :", response);
 
 
-              localStorage.setItem(
-                  'token',
-                  response.token
-              );
+                    const user: User = {
+
+                        id: response.userId,
+
+                        email: response.email,
+
+                        role: response.role ?? 'USER'
+
+                    };
 
 
-              localStorage.setItem(
-                  'role',
-                  response.role
-              );
+                    localStorage.setItem(
+                        'token',
+                        response.token
+                    );
 
 
-              localStorage.setItem(
-                  'email',
-                  response.email
-              );
+                    localStorage.setItem(
+                        'role',
+                        user.role
+                    );
 
 
-              localStorage.setItem(
-                  'user',
-                  JSON.stringify(user)
-              );
+                    localStorage.setItem(
+                        'email',
+                        user.email
+                    );
 
 
-              this.currentUser = user;
+                    localStorage.setItem(
+                        'user',
+                        JSON.stringify(user)
+                    );
 
 
-            })
-
-        );
-  }
+                    this.currentUser = user;
 
 
+                })
 
+            );
+    }
   getCurrentUser(): User | null {
 
     return this.currentUser;

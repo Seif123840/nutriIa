@@ -6,6 +6,7 @@ import {
   UserProfile,
   FoodItem,
   FoodLog,
+  FoodLogRequest,
   WeightLog,
   AiRecommendation,
   DailyNutrition
@@ -20,13 +21,28 @@ export class NutritionService {
 
   constructor(private http: HttpClient) {}
 
+  private getAuthHeaders() {
+
+    const token = localStorage.getItem('token');
+
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    };
+
+  }
+
   // ===========================
   // USER PROFILE
   // ===========================
 
   async getProfile(userId: string): Promise<UserProfile> {
     return await firstValueFrom(
-        this.http.get<UserProfile>(`${this.apiUrl}/profiles/${userId}`)
+        this.http.get<UserProfile>(
+            `${this.apiUrl}/profiles/${userId}`,
+            this.getAuthHeaders()
+        )
     );
   }
 
@@ -51,7 +67,7 @@ export class NutritionService {
 
     return await firstValueFrom(
         this.http.get<FoodItem[]>(
-            `${this.apiUrl}/foods/search?name=${query}`
+            `${this.apiUrl}/foods/search?query=${query}`
         )
     );
   }
@@ -60,34 +76,48 @@ export class NutritionService {
   // FOOD LOGS
   // ===========================
 
-  async getFoodLogs(userId: string, date: string): Promise<FoodLog[]> {
+  async getFoodLogs(
+      userId: string,
+      date: string
+  ): Promise<FoodLog[]> {
+
+    const token = localStorage.getItem('token');
 
     return await firstValueFrom(
         this.http.get<FoodLog[]>(
-            `${this.apiUrl}/foodlogs/${userId}/${date}`
+            `${this.apiUrl}/foodlogs/${userId}/${date}`,
+            {
+              headers:{
+                Authorization:`Bearer ${token}`
+              }
+            }
         )
     );
-
   }
 
   async addFoodLog(
-      log: Omit<FoodLog, 'id' | 'created_at' | 'food_item'>
+      log: FoodLogRequest
   ): Promise<FoodLog> {
 
     return await firstValueFrom(
         this.http.post<FoodLog>(
             `${this.apiUrl}/foodlogs`,
-            log
+            {
+              food_item_id: log.foodId,
+              date: log.date,
+              meal_type: log.mealType,
+              quantity_g: log.quantity
+            },
+            this.getAuthHeaders()
         )
     );
-
   }
-
   async deleteFoodLog(id: string): Promise<void> {
 
     await firstValueFrom(
         this.http.delete<void>(
-            `${this.apiUrl}/foodlogs/${id}`
+            `${this.apiUrl}/foodlogs/${id}`,
+            this.getAuthHeaders()
         )
     );
 
@@ -101,20 +131,25 @@ export class NutritionService {
 
     return await firstValueFrom(
         this.http.get<WeightLog[]>(
-            `${this.apiUrl}/weights/${userId}`
+            `${this.apiUrl}/weights/${userId}`,
+            this.getAuthHeaders()
         )
     );
 
   }
 
   async addWeightLog(
-      log: Omit<WeightLog, 'id' | 'created_at'>
+      log: {
+        weight: number;
+        date: string;
+      }
   ): Promise<WeightLog> {
 
     return await firstValueFrom(
         this.http.post<WeightLog>(
             `${this.apiUrl}/weights`,
-            log
+            log,
+            this.getAuthHeaders()
         )
     );
 
@@ -128,7 +163,8 @@ export class NutritionService {
 
     return await firstValueFrom(
         this.http.get<AiRecommendation[]>(
-            `${this.apiUrl}/recommendations/${userId}`
+            `${this.apiUrl}/recommendations/${userId}`,
+            this.getAuthHeaders()
         )
     );
 
@@ -141,7 +177,8 @@ export class NutritionService {
     await firstValueFrom(
         this.http.post<void>(
             `${this.apiUrl}/recommendations`,
-            rec
+            rec,
+            this.getAuthHeaders()
         )
     );
 
@@ -159,46 +196,57 @@ export class NutritionService {
 
           calories: acc.calories + (log.calories ?? 0),
 
-          protein_g: acc.protein_g + (log.protein_g ?? 0),
+          protein_g: acc.protein_g + (log.proteinG ?? 0),
 
-          carbs_g: acc.carbs_g + (log.carbs_g ?? 0),
+          carbs_g: acc.carbs_g + (log.carbsG ?? 0),
 
-          fat_g: acc.fat_g + (log.fat_g ?? 0),
+          fat_g: acc.fat_g + (log.fatG ?? 0)
 
         }),
 
         {
-
           calories: 0,
-
           protein_g: 0,
-
           carbs_g: 0,
-
           fat_g: 0
-
         }
 
     );
 
   }
-
   calculateNutritionForQuantity(
       food: FoodItem,
-      quantityG: number
-  ): DailyNutrition {
+      quantity: number
+  ) {
 
-    const factor = quantityG / 100;
+    const factor = quantity / 100;
+
+
+    const calories =
+        food.calories_per_100g ?? food.calories ?? 0;
+
+
+    const protein =
+        food.protein_per_100g ?? food.protein ?? 0;
+
+
+    const carbs =
+        food.carbs_per_100g ?? food.carbohydrates ?? 0;
+
+
+    const fat =
+        food.fat_per_100g ?? food.fat ?? 0;
+
 
     return {
 
-      calories: Math.round(food.calories_per_100g * factor * 10) / 10,
+      calories: Math.round(calories * factor),
 
-      protein_g: Math.round(food.protein_per_100g * factor * 10) / 10,
+      protein_g: Math.round(protein * factor),
 
-      carbs_g: Math.round(food.carbs_per_100g * factor * 10) / 10,
+      carbs_g: Math.round(carbs * factor),
 
-      fat_g: Math.round(food.fat_per_100g * factor * 10) / 10
+      fat_g: Math.round(fat * factor)
 
     };
 
@@ -206,14 +254,14 @@ export class NutritionService {
 
   calculateBMR(profile: UserProfile): number {
 
-    if (!profile.weight_kg || !profile.height_cm || !profile.age) {
+    if (!profile.weight || !profile.height_cm || !profile.age) {
       return 0;
     }
 
     if (profile.gender === 'male') {
 
       return (
-          10 * profile.weight_kg +
+          10 * profile.weight +
           6.25 * profile.height_cm -
           5 * profile.age +
           5
@@ -222,7 +270,7 @@ export class NutritionService {
     }
 
     return (
-        10 * profile.weight_kg +
+        10 * profile.weight +
         6.25 * profile.height_cm -
         5 * profile.age -
         161
@@ -274,7 +322,7 @@ export class NutritionService {
 
     }
 
-    const weight = profile.weight_kg ?? 70;
+    const weight = profile.weight ?? 70;
 
     const protein = Math.round(weight * 2);
 
@@ -385,9 +433,9 @@ export class NutritionService {
 
     if (weightLogs.length >= 2) {
 
-      const latest = weightLogs[weightLogs.length - 1].weight_kg;
+      const latest = weightLogs[weightLogs.length - 1].weight;
 
-      const previous = weightLogs[weightLogs.length - 2].weight_kg;
+      const previous = weightLogs[weightLogs.length - 2].weight;
 
       const diff = latest - previous;
 

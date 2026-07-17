@@ -5,6 +5,11 @@ import { AuthService } from '../../services/auth.service';
 import { NutritionService } from '../../services/nutrition.service';
 import { FoodItem, FoodLog } from '../../models/nutrition.models';
 
+// --------------------------------------------
+// AUCUNE déclaration d'interface ici
+// elles viennent toutes de nutrition.models
+// --------------------------------------------
+
 @Component({
   selector: 'app-food-log',
   standalone: true,
@@ -27,11 +32,11 @@ import { FoodItem, FoodLog } from '../../models/nutrition.models';
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <input
-              type="text"
-              [(ngModel)]="searchQuery"
-              (ngModelChange)="onSearch()"
-              placeholder="Search foods..."
-              class="search-input"
+                type="text"
+                [(ngModel)]="searchQuery"
+                (ngModelChange)="onSearch()"
+                placeholder="Search foods..."
+                class="search-input"
             />
           </div>
 
@@ -40,10 +45,10 @@ import { FoodItem, FoodLog } from '../../models/nutrition.models';
               @for (food of searchResults(); track food.id) {
                 <button class="food-result" (click)="selectFood(food)">
                   <div class="food-result-info">
-                    <span class="food-result-name">{{ food.name }}</span>
-                    @if (food.brand) { <span class="food-result-brand">{{ food.brand }}</span> }
+                    <span class="food-result-name">{{ food.description }}</span>
+                    <span class="food-result-brand">{{ food.category }}</span>
+                    <span class="food-result-cal">{{ food.calories | number:'1.0-0' }} kcal/100g</span>
                   </div>
-                  <span class="food-result-cal">{{ food.calories_per_100g }} kcal/100g</span>
                 </button>
               }
             </div>
@@ -52,15 +57,14 @@ import { FoodItem, FoodLog } from '../../models/nutrition.models';
           @if (selectedFood()) {
             <div class="food-selected">
               <div class="selected-header">
-                <h3>{{ selectedFood()!.name }}</h3>
+                <h3>{{ selectedFood()!.description }}</h3>
                 <button class="clear-btn" (click)="selectedFood.set(null)">✕</button>
               </div>
               <div class="nutrition-per-100">
-                <span class="np">{{ selectedFood()!.calories_per_100g | number:'1.0-0' }} kcal</span>
-                <span class="np">P: {{ selectedFood()!.protein_per_100g }}g</span>
-                <span class="np">C: {{ selectedFood()!.carbs_per_100g }}g</span>
-                <span class="np">F: {{ selectedFood()!.fat_per_100g }}g</span>
-                <span class="np-label">per 100g</span>
+                <span class="np">{{ selectedFood()!.calories | number:'1.0-0' }} kcal</span>
+                <span class="np">P: {{ selectedFood()!.protein }}g</span>
+                <span class="np">C: {{ selectedFood()!.carbohydrates }}g</span>
+                <span class="np">F: {{ selectedFood()!.fat }}g</span>
               </div>
               <div class="add-form">
                 <div class="form-row">
@@ -142,14 +146,16 @@ import { FoodItem, FoodLog } from '../../models/nutrition.models';
                   @for (log of getMealLogs(meal.key); track log.id) {
                     <div class="food-row">
                       <div class="food-row-info">
-                        <span class="food-row-name">{{ log.food_item?.name }}</span>
-                        <span class="food-row-qty">{{ log.quantity_g }}g</span>
+                        <span class="food-row-name"><span class="food-row-name">
+  {{ log.food?.description || log.food?.name }}
+</span></span>
+                        <span class="food-row-qty">{{ log.quantityG }}g</span>
                       </div>
                       <div class="food-row-macros">
                         <span>{{ log.calories | number:'1.0-0' }} kcal</span>
-                        <span class="macro-p">P: {{ log.protein_g | number:'1.0-0' }}g</span>
-                        <span class="macro-c">C: {{ log.carbs_g | number:'1.0-0' }}g</span>
-                        <span class="macro-f">F: {{ log.fat_g | number:'1.0-0' }}g</span>
+                        <span class="macro-p">P: {{ log.proteinG | number:'1.0-0' }}g</span>
+                        <span class="macro-c">C:{{ log.carbsG | number:'1.0-0' }}g</span>
+                        <span class="macro-f">F: {{ log.fatG | number:'1.0-0' }}g</span>
                       </div>
                       <button class="delete-btn" (click)="deleteLog(log.id)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -166,7 +172,8 @@ import { FoodItem, FoodLog } from '../../models/nutrition.models';
       </div>
     </div>
   `,
-  styles: [`
+  styles: [
+    `
     .food-log { padding: 32px; }
     .page-header {
       display: flex;
@@ -276,7 +283,6 @@ import { FoodItem, FoodLog } from '../../models/nutrition.models';
       font-weight: 600;
       color: var(--neutral-700);
     }
-    .np-label { font-size: 11px; color: var(--neutral-400); align-self: center; }
     .add-form { display: flex; flex-direction: column; gap: 12px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .form-group { display: flex; flex-direction: column; gap: 4px; }
@@ -391,7 +397,8 @@ import { FoodItem, FoodLog } from '../../models/nutrition.models';
     @media (max-width: 900px) {
       .log-layout { grid-template-columns: 1fr; }
     }
-  `]
+    `
+  ]
 })
 export class FoodLogComponent implements OnInit {
   selectedDate = new Date().toISOString().split('T')[0];
@@ -399,7 +406,7 @@ export class FoodLogComponent implements OnInit {
   searchResults = signal<FoodItem[]>([]);
   selectedFood = signal<FoodItem | null>(null);
   quantity = 100;
-  mealType: FoodLog['meal_type'] = 'lunch';
+  mealType: FoodLog['mealType'] = 'lunch';
   adding = signal(false);
   logs = signal<FoodLog[]>([]);
   preview = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
@@ -424,7 +431,11 @@ export class FoodLogComponent implements OnInit {
   async loadLogs() {
     const user = this.auth.currentUser;
     if (!user) return;
+
     const logs = await this.nutritionService.getFoodLogs(user.id, this.selectedDate);
+
+    console.log("LOGS =", logs);
+
     this.logs.set(logs);
   }
 
@@ -446,7 +457,10 @@ export class FoodLogComponent implements OnInit {
 
   updatePreview() {
     const food = this.selectedFood();
-    if (!food || this.quantity <= 0) { this.preview = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }; return; }
+    if (!food || this.quantity <= 0) {
+      this.preview = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+      return;
+    }
     this.preview = this.nutritionService.calculateNutritionForQuantity(food, this.quantity);
   }
 
@@ -454,16 +468,15 @@ export class FoodLogComponent implements OnInit {
     const food = this.selectedFood();
     const user = this.auth.currentUser;
     if (!food || !user || this.quantity <= 0) return;
+
     this.adding.set(true);
     try {
       const nutrition = this.nutritionService.calculateNutritionForQuantity(food, this.quantity);
       await this.nutritionService.addFoodLog({
-        user_id: user.id,
-        food_item_id: food.id,
+        foodId: Number(food.id),
         date: this.selectedDate,
-        meal_type: this.mealType,
-        quantity_g: this.quantity,
-        ...nutrition,
+        mealType: this.mealType,
+        quantity: this.quantity
       });
       await this.loadLogs();
       this.selectedFood.set(null);
@@ -473,13 +486,13 @@ export class FoodLogComponent implements OnInit {
     }
   }
 
-  async deleteLog(id: string) {
-    await this.nutritionService.deleteFoodLog(id);
+  async deleteLog(id: string | number) {
+    await this.nutritionService.deleteFoodLog(id.toString());
     await this.loadLogs();
   }
 
   getMealLogs(meal: string): FoodLog[] {
-    return this.logs().filter(l => l.meal_type === meal);
+    return this.logs().filter(l => l.mealType === meal);
   }
 
   getMealCalories(meal: string): number {

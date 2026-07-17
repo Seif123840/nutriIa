@@ -54,7 +54,7 @@ import { UserProfile } from '../../models/nutrition.models';
               </div>
               <div class="form-group">
                 <label>Current weight (kg)</label>
-                <input type="number" [(ngModel)]="profile.weight_kg" placeholder="e.g. 70" min="30" max="300" />
+                <input type="number" [(ngModel)]="profile.weight" placeholder="e.g. 70" min="30" max="300" />
               </div>
             </div>
             <button class="btn-next" (click)="nextStep()" [disabled]="!step1Valid()">
@@ -358,13 +358,13 @@ export class OnboardingComponent implements OnInit {
     age: undefined,
     gender: undefined,
     height_cm: undefined,
-    weight_kg: undefined,
+    weight: undefined,
     activity_level: 'moderately_active',
     goal: 'maintain',
   };
 
   get previewTargets() {
-    if (!this.profile.weight_kg || !this.profile.height_cm || !this.profile.age) return null;
+    if (!this.profile.weight || !this.profile.height_cm || !this.profile.age) return null;
     return this.nutritionService.calculateTargets(this.profile as UserProfile);
   }
 
@@ -395,7 +395,7 @@ export class OnboardingComponent implements OnInit {
   }
 
   step1Valid(): boolean {
-    return !!(this.profile.full_name && this.profile.age && this.profile.gender && this.profile.height_cm && this.profile.weight_kg);
+    return !!(this.profile.full_name && this.profile.age && this.profile.gender && this.profile.height_cm && this.profile.weight);
   }
 
   nextStep() {

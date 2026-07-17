@@ -60,7 +60,7 @@ import { UserProfile } from '../../models/nutrition.models';
               </div>
               <div class="form-group">
                 <label>Weight (kg)</label>
-                <input type="number" [(ngModel)]="form.weight_kg" name="weight_kg" min="30" max="300" placeholder="70" />
+                <input type="number" [(ngModel)]="form.weight" name="weight_kg" min="30" max="300" placeholder="70" />
               </div>
             </div>
           </div>
@@ -282,7 +282,7 @@ export class ProfileComponent implements OnInit {
     age: undefined,
     gender: undefined,
     height_cm: undefined,
-    weight_kg: undefined,
+    weight: undefined,
     activity_level: 'moderately_active',
     goal: 'maintain',
   };
@@ -306,7 +306,7 @@ export class ProfileComponent implements OnInit {
   }
 
   get estimatedTargets() {
-    if (!this.form.weight_kg || !this.form.height_cm || !this.form.age) return null;
+    if (!this.form.weight || !this.form.height_cm || !this.form.age) return null;
     return this.nutritionService.calculateTargets(this.form as UserProfile);
   }
 

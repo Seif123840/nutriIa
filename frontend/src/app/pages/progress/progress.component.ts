@@ -126,7 +126,7 @@ import { WeightLog } from '../../models/nutrition.models';
               @for (log of weightLogsReversed; track log.id; let i = $index) {
                 <tr>
                   <td>{{ log.date | date:'EEE, MMM d, y' }}</td>
-                  <td><strong>{{ log.weight_kg | number:'1.1-1' }} kg</strong></td>
+                  <td><strong>{{ log.weight | number:'1.1-1' }} kg</strong></td>
                   <td>
                     @if (i < weightLogsReversed.length - 1) {
                       <span [class.pos]="changeFor(i) > 0" [class.neg]="changeFor(i) < 0">
@@ -333,8 +333,7 @@ export class ProgressComponent implements OnInit {
     const logs = await this.nutritionService.getWeightLogs(user.id);
     this.weightLogs.set(logs);
     if (logs.length > 0) {
-      this.newWeight = logs[logs.length - 1].weight_kg;
-    }
+      this.newWeight = logs[logs.length - 1].weight;    }
   }
 
   async addWeight() {
@@ -343,10 +342,8 @@ export class ProgressComponent implements OnInit {
     this.saving.set(true);
     try {
       await this.nutritionService.addWeightLog({
-        user_id: user.id,
-        weight_kg: this.newWeight,
-        date: this.logDate,
-        notes: this.notes || null,
+        weight: this.newWeight,
+        date: this.logDate
       });
       this.notes = '';
       await this.loadLogs();
@@ -357,19 +354,16 @@ export class ProgressComponent implements OnInit {
 
   get latestWeight(): number {
     const ws = this.weightLogs();
-    return ws[ws.length - 1]?.weight_kg ?? 0;
-  }
+    return ws[ws.length - 1]?.weight ?? 0;  }
 
   get startWeight(): number | null {
     const ws = this.weightLogs();
-    return ws.length > 1 ? ws[0].weight_kg : null;
-  }
+    return ws.length > 1 ? ws[0].weight : null;  }
 
   get totalChange(): number {
     const ws = this.weightLogs();
     if (ws.length < 2) return 0;
-    return ws[ws.length - 1].weight_kg - ws[0].weight_kg;
-  }
+    return ws[ws.length - 1].weight - ws[0].weight;  }
 
   get weightLogsReversed(): WeightLog[] {
     return [...this.weightLogs()].reverse();
@@ -378,18 +372,17 @@ export class ProgressComponent implements OnInit {
   changeFor(i: number): number {
     const rev = this.weightLogsReversed;
     if (i >= rev.length - 1) return 0;
-    return rev[i].weight_kg - rev[i + 1].weight_kg;
-  }
+    return rev[i].weight - rev[i + 1].weight;  }
 
   get linePoints(): string {
     const ws = this.weightLogs();
     if (ws.length < 2) return '';
-    const min = Math.min(...ws.map(w => w.weight_kg));
-    const max = Math.max(...ws.map(w => w.weight_kg));
+    const min = Math.min(...ws.map(w => w.weight));
+    const max = Math.max(...ws.map(w => w.weight));
     const range = max - min || 1;
     return ws.map((w, i) => {
       const x = (i / (ws.length - 1)) * 600;
-      const y = 185 - ((w.weight_kg - min) / range) * 170;
+      const y = 185 - ((w.weight - min) / range) * 170;
       return `${x},${y}`;
     }).join(' ');
   }
@@ -402,12 +395,12 @@ export class ProgressComponent implements OnInit {
   get dotPoints(): { x: number; y: number }[] {
     const ws = this.weightLogs();
     if (ws.length < 2) return [];
-    const min = Math.min(...ws.map(w => w.weight_kg));
-    const max = Math.max(...ws.map(w => w.weight_kg));
+    const min = Math.min(...ws.map(w => w.weight));
+    const max = Math.max(...ws.map(w => w.weight));
     const range = max - min || 1;
     return ws.map((w, i) => ({
       x: (i / (ws.length - 1)) * 600,
-      y: 185 - ((w.weight_kg - min) / range) * 170,
+      y: 185 - ((w.weight - min) / range) * 170,
     }));
   }
 }
